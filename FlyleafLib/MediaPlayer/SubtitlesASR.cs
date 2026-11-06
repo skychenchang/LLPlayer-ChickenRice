@@ -102,6 +102,17 @@ public class SubtitlesASR
                 }
             }
         }
+        else if (_config.Subtitles.ASREngine == SubASREngineType.ChickenRice)
+        {
+            // Fail early as a configuration error instead of starting a long batch run
+            // that would only fail because the engine/model files are missing.
+            var (ok, error) = ChickenRiceASRService.Validate(_config.Subtitles.ChickenRiceConfig);
+            if (!ok)
+            {
+                err = error;
+                return false;
+            }
+        }
 
         err = "";
 
@@ -193,17 +204,25 @@ public class SubtitlesASR
             SubIndexSet.Add(subIndex);
 
             _cts = new CancellationTokenSource();
-            using AudioReader reader = new(_config, subIndex);
-            reader.Open(url, streamIndex, type, _cts.Token);
+            CancellationToken token = _cts.Token;
+            bool isChickenRice = _config.Subtitles.ASREngine == SubASREngineType.ChickenRice;
 
-            if (_cts.Token.IsCancellationRequested)
+            SubtitleData MakeSub(SubtitleASRData data) => new()
             {
-                return true;
-            }
+                Text = data.Text,
+                StartTime = data.StartTime,
+                EndTime = data.EndTime,
+#if DEBUG
+                ChunkNo = data.ChunkNo,
+                StartTimeChunk = data.StartTimeChunk,
+                EndTimeChunk = data.EndTimeChunk,
+#endif
+            };
 
-            reader.ReadAll(curTime, data =>
+            // Shared injection path for every ASR engine (streaming or whole-file).
+            void AddSub(SubtitleASRData data)
             {
-                if (_cts.Token.IsCancellationRequested)
+                if (token.IsCancellationRequested)
                 {
                     return;
                 }
@@ -225,39 +244,124 @@ public class SubtitlesASR
                             _subtitlesManager[i].LanguageSource = Language.Get(data.Language);
                         }
 
-                        SubtitleData sub = new()
-                        {
-                            Text = data.Text,
-                            StartTime = data.StartTime,
-                            EndTime = data.EndTime,
-#if DEBUG
-                            ChunkNo = data.ChunkNo,
-                            StartTimeChunk = data.StartTimeChunk,
-                            EndTimeChunk = data.EndTimeChunk,
-#endif
-                        };
+                        _subtitlesManager[i].Add(MakeSub(data));
 
-                        _subtitlesManager[i].Add(sub);
-                        if (isInit)
+                        // ChickenRice injects while the whole-file engine is still
+                        // running: re-evaluate the visible line for the current
+                        // playback position on every addition. The playback loop
+                        // keeps doing this afterwards (Player.Playback.cs).
+                        if (isInit || isChickenRice)
                         {
                             _subtitlesManager[i].SetCurrentTime(new TimeSpan(_config.Subtitles.player.CurTime));
                         }
                     }
                 }
-            }, _cts.Token);
-
-            if (!_cts.Token.IsCancellationRequested)
-            {
-                // TODO: L: Notify, express completion in some way
-                Utils.PlayCompletionSound();
             }
 
-            foreach (int i in SubIndexSet)
+            // Upstream post-processes (merge / de-duplicate / timeline fix) before
+            // writing the SRT. Once the run finishes, replace the live preview with
+            // that authoritative list atomically, keeping the current playhead.
+            void ReplaceSubs(IReadOnlyList<SubtitleASRData> finalSubs)
             {
+                if (token.IsCancellationRequested || finalSubs.Count == 0)
+                    return;
+
                 lock (_lockerSubs)
                 {
-                    // Stop spinner (required when dual ASR)
-                    _subtitlesManager[i].StartLoading().Dispose();
+                    foreach (int i in SubIndexSet)
+                    {
+                        _subtitlesManager[i].Load(Enumerable.Empty<SubtitleData>());
+                        foreach (SubtitleASRData data in finalSubs)
+                            _subtitlesManager[i].Add(MakeSub(data));
+
+                        _subtitlesManager[i].LanguageSource = Language.Get(finalSubs[0].Language);
+                        _subtitlesManager[i].SetCurrentTime(new TimeSpan(_config.Subtitles.player.CurTime));
+                    }
+                }
+            }
+
+            try
+            {
+                if (isChickenRice)
+                {
+                    // Upstream is a whole-file batch tool: no AudioReader chunking, one
+                    // process for the entire media file, timestamps already absolute.
+                    ChickenRiceConfig crConfig = _config.Subtitles.ChickenRiceConfig;
+
+                    if (crConfig.ProgressiveEnabled)
+                    {
+                        // Playback is already running on the player thread. Live
+                        // segments are injected as the engine emits them, gated by
+                        // CurTime, and the final SRT replaces the preview at the end.
+                        ChickenRiceProgressiveBuffer buffer = new(
+                            () => new TimeSpan(_config.Subtitles.player.CurTime),
+                            TimeSpan.FromSeconds(Math.Max(0, crConfig.ProgressiveLeadSeconds)),
+                            AddSub);
+
+                        ChickenRiceASRService.GenerateProgressive(
+                            crConfig, url, curTime, token,
+                            buffer.Add,
+                            buffer.Pump,
+                            finalSubs =>
+                            {
+                                buffer.Clear();
+                                ReplaceSubs(finalSubs);
+                            });
+                    }
+                    else
+                    {
+                        // Opt-out in Subtitles > ASR: legacy whole-file behaviour.
+                        foreach (SubtitleASRData data in ChickenRiceASRService.Generate(
+                                     crConfig, url, curTime, token))
+                        {
+                            token.ThrowIfCancellationRequested();
+                            AddSub(data);
+                        }
+                    }
+                }
+                else
+                {
+                    using AudioReader reader = new(_config, subIndex);
+                    reader.Open(url, streamIndex, type, token);
+
+                    if (token.IsCancellationRequested)
+                    {
+                        return true;
+                    }
+
+                    reader.ReadAll(curTime, AddSub, token);
+                }
+
+                if (!token.IsCancellationRequested)
+                {
+                    // TODO: L: Notify, express completion in some way
+                    Utils.PlayCompletionSound();
+
+                    if (isChickenRice)
+                    {
+                        // Whole-file subtitles arrive in a single burst, so refresh the
+                        // visible line for the current playback position once complete.
+                        lock (_lockerSubs)
+                        {
+                            foreach (int i in SubIndexSet)
+                            {
+                                _subtitlesManager[i].SetCurrentTime(new TimeSpan(_config.Subtitles.player.CurTime));
+                            }
+                        }
+                    }
+                }
+            }
+            finally
+            {
+                // Always stop the spinner, including on engine failure, so playback and
+                // the subtitle UI are left in a usable state.
+                foreach (int i in SubIndexSet)
+                {
+                    lock (_lockerSubs)
+                    {
+                        // Stop spinner (required when dual ASR)
+                        _subtitlesManager[i].StartLoading().Dispose();
+                    }
                 }
             }
         }

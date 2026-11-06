@@ -1,8 +1,10 @@
 ﻿using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Windows;
 using System.Windows.Controls;
 using LLPlayer.Extensions;
+using LLPlayer.Services;
 
 namespace LLPlayer.Controls.Settings;
 
@@ -107,6 +109,11 @@ public class SettingsAboutVM : Bindable
             },
         ];
 
+        MenuStrings.LanguageChanged += () =>
+        {
+            foreach (LibraryInfo library in Libraries)
+                library.RaiseLocalizedDescription();
+        };
     }
     public ObservableCollection<LibraryInfo> Libraries { get; }
 
@@ -119,9 +126,17 @@ public class SettingsAboutVM : Bindable
     });
 }
 
-public class LibraryInfo
+public class LibraryInfo : INotifyPropertyChanged
 {
     public required string Name { get; init; }
     public required string Description { get; init; }
     public required string Url { get; init; }
+
+    /// <summary>Third-party library descriptions are UI copy, not data.</summary>
+    public string LocalizedDescription => MenuStrings.Translate(Description);
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    public void RaiseLocalizedDescription()
+        => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(LocalizedDescription)));
 }

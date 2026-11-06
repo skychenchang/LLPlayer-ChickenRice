@@ -270,7 +270,57 @@ public class SettingsSubtitlesASRVM : Bindable
         var cmd = cmdBase.WithArguments("--help");
         Clipboard.SetText(cmd.CommandToText());
     });
-#endregion
+    #endregion
+
+    #region ChickenRice
+    public string ChickenRiceStatus { get; set => Set(ref field, value); } = "";
+
+    public DelegateCommand CmdCheckChickenRice => field ??= new(() =>
+    {
+        var config = FL.PlayerConfig.Subtitles.ChickenRiceConfig;
+        var (ok, error) = ChickenRiceASRService.Validate(config);
+        if (!ok)
+        {
+            ChickenRiceStatus = error;
+            return;
+        }
+
+        string modelDir = config.ResolvedModelDirectory;
+        List<string> missing = [];
+        if (!File.Exists(Path.Combine(modelDir, "whisper_vad.onnx")))
+            missing.Add("whisper_vad.onnx");
+        if (!File.Exists(Path.Combine(modelDir, "whisper_vad_metadata.json")))
+            missing.Add("whisper_vad_metadata.json");
+        if (!File.Exists(Path.Combine(modelDir, "whisper-base", "preprocessor_config.json")))
+            missing.Add("whisper-base/preprocessor_config.json");
+        if (!File.Exists(config.GenerationConfigPath))
+            missing.Add("generation_config.json5 (upstream defaults will be used)");
+
+        ChickenRiceStatus = missing.Count == 0
+            ? $"OK - engine and model are ready. Engine: {config.EnginePath} | Models: {modelDir}"
+            : "Engine and model found, but optional upstream files are missing: " + string.Join(", ", missing);
+    });
+
+    public DelegateCommand CmdOpenChickenRiceFolder => field ??= new(() =>
+    {
+        string dir = FL.PlayerConfig.Subtitles.ChickenRiceConfig.EngineDirectory;
+        if (!Directory.Exists(dir))
+            Directory.CreateDirectory(dir);
+
+        Process.Start(new ProcessStartInfo
+        {
+            FileName = dir,
+            UseShellExecute = true,
+            CreateNoWindow = false
+        });
+    });
+
+    public DelegateCommand CmdCopyChickenRiceCommand => field ??= new(() =>
+    {
+        Clipboard.SetText(ChickenRiceASRService.BuildDebugCommand(FL.PlayerConfig.Subtitles.ChickenRiceConfig));
+        ChickenRiceStatus = "Debug command copied. Replace the sample media path with a real local file and run it to verify the engine independently.";
+    });
+    #endregion
 }
 
 [ValueConversion(typeof(Enum), typeof(bool))]

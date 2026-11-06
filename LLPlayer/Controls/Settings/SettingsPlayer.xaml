@@ -9,12 +9,14 @@
              xmlns:sys="clr-namespace:System;assembly=mscorlib"
              xmlns:vm="clr-namespace:LLPlayer.ViewModels"
              xmlns:helpers="clr-namespace:LLPlayer.Extensions"
+             xmlns:services="clr-namespace:LLPlayer.Services"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance vm:SettingsDialogVM}"
              d:Foreground="White"
              d:Background="Black"
-             d:DesignHeight="450" d:DesignWidth="800">
+             d:DesignHeight="450" d:DesignWidth="800"
+             services:MenuLocalizer.AutoLocalize="True">
     <UserControl.Resources>
         <ObjectDataProvider x:Key="LogLevelEnum" MethodName="GetValues" ObjectType="{x:Type sys:Enum}">
             <ObjectDataProvider.MethodParameters>
@@ -41,6 +43,22 @@
                 FontSize="24"
                 FontWeight="Bold"
                 Margin="0 0 0 16" />
+
+            <GroupBox Header="Interface">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock
+                            Width="180"
+                            Text="UI Language" />
+                        <ComboBox
+                            Width="100"
+                            ItemsSource="{Binding Source={x:Static services:MenuStrings.UILanguageOptions}}"
+                            DisplayMemberPath="Value"
+                            SelectedValuePath="Key"
+                            SelectedValue="{Binding FL.Config.MenuUILanguage, Mode=TwoWay}" />
+                    </StackPanel>
+                </StackPanel>
+            </GroupBox>
 
             <GroupBox Header="Player">
                 <StackPanel>

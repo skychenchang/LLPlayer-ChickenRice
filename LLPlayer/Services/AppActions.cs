@@ -622,6 +622,9 @@ public class AppActions
 
     #endregion
 
+    // UI language is selected from Settings > Player > UI Language through a
+    // two-way binding to AppConfig.MenuUILanguage, which applies and persists it.
+
     // TODO: L: make it command?
     public void SaveAllConfig()
     {

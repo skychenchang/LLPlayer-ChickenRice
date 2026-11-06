@@ -27,6 +27,11 @@ public class AppConfig : Bindable
         FL = fl;
         Loaded = true;
 
+        // Apply a restored language even when the JSON setter did not change the
+        // default value (and therefore did not raise PropertyChanged).
+        MenuStrings.Language = MenuUILanguage;
+        MenuLocalizer.Refresh();
+
         Subs.Initialize(this, fl);
     }
 
@@ -47,6 +52,47 @@ public class AppConfig : Bindable
     }
 
     public AppConfigSubs Subs { get; set => Set(ref field, value); } = new();
+
+    /// <summary>
+    /// Language used by the player menus and the settings UI.
+    /// Chinese is the default for new installations; an explicitly saved English
+    /// value in LLPlayer.Config.json is still respected (JsonStringEnumConverter).
+    /// Changing it from Settings > Player > UI Language takes effect immediately
+    /// and is persisted at once, independently of "Save &amp; Close".
+    /// </summary>
+    public MenuLanguage MenuUILanguage
+    {
+        get;
+        set
+        {
+            // Set the static language first: PropertyChanged subscribers (dialog
+            // titles) and multi-value converters re-evaluate synchronously.
+            MenuStrings.Language = value;
+
+            if (Set(ref field, value))
+            {
+                MenuLocalizer.Refresh();
+
+                // Loaded is false while JSON is being deserialized.
+                if (Loaded)
+                    PersistMenuLanguage();
+            }
+        }
+    } = MenuLanguage.Chinese;
+
+    private void PersistMenuLanguage()
+    {
+        try
+        {
+            Save(App.AppConfigPath);
+        }
+        catch (Exception ex)
+        {
+            // A dev build without a x.y.z+hash ProductVersion cannot save;
+            // the language switch itself has already been applied.
+            System.Diagnostics.Debug.WriteLine($"Cannot save menu language: {ex.Message}");
+        }
+    }
 
     public static AppConfig Load(string path)
     {

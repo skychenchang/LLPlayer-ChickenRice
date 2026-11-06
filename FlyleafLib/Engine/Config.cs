@@ -1268,6 +1268,11 @@ public class Config : NotifyPropertyChanged
         public FasterWhisperConfig FasterWhisperConfig { get; set => Set(ref field, value); } = new();
 
         /// <summary>
+        /// ASR ChickenRice (Japanese -> Chinese, whole file) config
+        /// </summary>
+        public ChickenRiceConfig ChickenRiceConfig { get; set => Set(ref field, value); } = new();
+
+        /// <summary>
         /// Chunk size (MB) when processing ASR with audio stream
         /// Increasing size will increase memory usage but may result in more natural subtitle breaks
         /// </summary>

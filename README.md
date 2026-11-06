@@ -8,7 +8,7 @@
 
 <p align="center">
 <a href="https://llplayer.com">Website</a> ·
-<a href="https://github.com/umlx5h/LLPlayer/releases">Releases</a>
+<a href="https://github.com/skychenchang/LLPlayer-ChickenRice/releases">Releases</a>
 </p>
 
 ---
@@ -65,7 +65,7 @@ LLPlayer has many features for language learning that are not available in norma
 
 ## 🚀 Getting Started
 
-1. **Download builds from [release](https://github.com/umlx5h/LLPlayer/releases)**
+1. **Download builds from [release](https://github.com/skychenchang/LLPlayer-ChickenRice/releases)**
 
 2. **Launch LLPlayer**
 
@@ -136,7 +136,7 @@ I will actively make breaking changes during version `0.X.X`.
 1. **Clone the Repository**
 
 ```bash
-$ git clone git@github.com:umlx5h/LLPlayer.git
+$ git clone git@github.com:skychenchang/LLPlayer-ChickenRice.git
 ```
 
 2. **Open Project**

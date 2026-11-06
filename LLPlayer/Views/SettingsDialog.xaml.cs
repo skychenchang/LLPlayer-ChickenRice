@@ -1,6 +1,7 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
 using LLPlayer.Controls.Settings;
+using LLPlayer.Services;
 using LLPlayer.ViewModels;
 
 namespace LLPlayer.Views;
@@ -86,6 +87,10 @@ public partial class SettingsDialog : UserControl
                     SettingsContent.Content = new SettingsAbout();
                     break;
             }
+
+            // Every tab is rebuilt from scratch; localize the freshly created
+            // UserControl immediately (Refresh() only covers controls that exist).
+            MenuLocalizer.Localize(SettingsContent);
         }
     }
 }

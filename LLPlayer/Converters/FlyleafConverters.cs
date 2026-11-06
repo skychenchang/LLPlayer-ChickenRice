@@ -4,6 +4,7 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Media;
 using FlyleafLib;
+using LLPlayer.Services;
 using static FlyleafLib.MediaFramework.MediaDemuxer.Demuxer;
 
 namespace LLPlayer.Converters;
@@ -108,7 +109,7 @@ public class SumConverter : IMultiValueConverter
 public class PlaylistItemsConverter : IMultiValueConverter
 {
     public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
-        => $"Playlist ({values[0]}/{values[1]})";
+        => MenuStrings.Format("Playlist ({0}/{1})", values[0], values[1]);
 
     public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
         => throw new NotImplementedException();

@@ -309,7 +309,8 @@ AncestorType={x:Type MenuItem}}}">
         </HierarchicalDataTemplate.ItemTemplate>
     </HierarchicalDataTemplate>
 
-    <ContextMenu x:Key="PopUpMenu" Style="{StaticResource FlyleafContextMenu}" Opened="PopUpMenu_OnOpened" Closed="PopUpMenu_OnClosed">
+    <ContextMenu x:Key="PopUpMenu" Style="{StaticResource FlyleafContextMenu}" Opened="PopUpMenu_OnOpened" Closed="PopUpMenu_OnClosed"
+                 services:MenuLocalizer.AutoLocalize="True">
         <MenuItem Header="Open File" Command="{Binding FL.Player.Commands.OpenFromFileDialog}" Icon="{materialDesign:PackIcon FolderOutline}" />
 
         <MenuItem x:Name="MenuPasteUrl" Header="Paste URL" Command="{Binding FL.Player.Commands.OpenFromClipboard}" Icon="{materialDesign:PackIcon ContentPaste}" />
@@ -320,6 +321,8 @@ AncestorType={x:Type MenuItem}}}">
                 <MultiBinding Converter="{StaticResource PlaylistItemsConv}">
                     <Binding Path="FL.Player.Playlist.Items.Count" />
                     <Binding Path="FL.Player.Playlist.ExpectingItems"/>
+                    <!-- Re-evaluate the localized label when the UI language changes. -->
+                    <Binding Path="FL.Config.MenuUILanguage" />
                 </MultiBinding>
             </MenuItem.Header>
 

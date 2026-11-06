@@ -7,13 +7,15 @@
              xmlns:flyleaf="clr-namespace:FlyleafLib;assembly=FlyleafLib"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:helpers="clr-namespace:LLPlayer.Extensions"
+             xmlns:services="clr-namespace:LLPlayer.Services"
              xmlns:sys="clr-namespace:System;assembly=System.Runtime"
              xmlns:diagnostics="clr-namespace:System.Diagnostics;assembly=System.Diagnostics.Process"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance local:SettingsSubtitlesASRVM}"
              d:Foreground="White"
              d:Background="Black"
-             d:DesignHeight="450" d:DesignWidth="800">
+             d:DesignHeight="450" d:DesignWidth="800"
+             services:MenuLocalizer.AutoLocalize="True">
     <UserControl.Resources>
         <local:ASREngineDownloadedConverter x:Key="ASREngineDownloadedConv" />
 
@@ -686,6 +688,128 @@
                                         HorizontalAlignment="Left"
                                         Command="{Binding CmdCopyHelpCommand}"/>
                                 </StackPanel>
+                            </StackPanel>
+                        </GroupBox>
+                    </StackPanel>
+                </TabItem>
+
+                <TabItem Header="ChickenRice (JA > ZH)">
+                    <StackPanel Margin="0 10 0 0">
+                        <GroupBox Header="ChickenRice config">
+                            <StackPanel>
+                                <TextBlock
+                                    Margin="0 0 0 10"
+                                    TextWrapping="Wrap"
+                                    Opacity="0.75"
+                                    services:MenuLocalizer.LocalizeText="True"
+                                    Text="Whole-file offline Japanese-to-Chinese subtitles (TransWithAI ChickenRice). Select ASR (AUTO) from the CC menu to generate subtitles for the entire local file. Turn off auto-translate, because this engine already outputs Chinese." />
+
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Width="200" Text="Use Manual Engine" />
+                                    <ToggleButton IsChecked="{Binding FL.PlayerConfig.Subtitles.ChickenRiceConfig.UseManualEngine}" />
+                                </StackPanel>
+
+                                <DockPanel Margin="0 6">
+                                    <TextBlock Width="200" Text="    Manual Engine Path" />
+                                    <TextBox Text="{Binding FL.PlayerConfig.Subtitles.ChickenRiceConfig.ManualEnginePath}"
+                                             HorizontalContentAlignment="Left" />
+                                </DockPanel>
+
+                                <DockPanel Margin="0 6">
+                                    <TextBlock Width="200">
+                                        Model Directory
+                                        <InlineUIContainer BaselineAlignment="Center" Cursor="Help">
+                                            <ToolTipService.ToolTip>
+                                                <TextBlock Text="CTranslate2 model directory passed as --model_name_or_path. Relative paths resolve against the engine folder (upstream default: models)." TextWrapping="Wrap" MaxWidth="400" />
+                                            </ToolTipService.ToolTip>
+                                            <materialDesign:PackIcon Kind="Information" Width="16" Height="16" Margin="4 0 0 0" />
+                                        </InlineUIContainer>
+                                    </TextBlock>
+                                    <TextBox Text="{Binding FL.PlayerConfig.Subtitles.ChickenRiceConfig.ModelDirectory}"
+                                             HorizontalContentAlignment="Left" />
+                                </DockPanel>
+
+                                <StackPanel Orientation="Horizontal" Margin="0 6">
+                                    <TextBlock Width="200" Text="Device" />
+                                    <ComboBox Width="160"
+                                              SelectedItem="{Binding FL.PlayerConfig.Subtitles.ChickenRiceConfig.Device}">
+                                        <sys:String>cuda</sys:String>
+                                        <sys:String>cpu</sys:String>
+                                        <sys:String>amd</sys:String>
+                                    </ComboBox>
+                                </StackPanel>
+
+                                <DockPanel Margin="0 6">
+                                    <TextBlock Width="200" Text="Compute Type" />
+                                    <TextBox Text="{Binding FL.PlayerConfig.Subtitles.ChickenRiceConfig.ComputeType}"
+                                             HorizontalContentAlignment="Left" />
+                                </DockPanel>
+
+                                <StackPanel Orientation="Horizontal" Margin="0 6">
+                                    <TextBlock Width="200">
+                                        Task
+                                        <InlineUIContainer BaselineAlignment="Center" Cursor="Help">
+                                            <ToolTipService.ToolTip>
+                                                <TextBlock Text="translate = Japanese speech to Chinese subtitles (fine-tuned model). transcribe = Japanese original text (use the whisper-ja model in the model directory)." TextWrapping="Wrap" MaxWidth="400" />
+                                            </ToolTipService.ToolTip>
+                                            <materialDesign:PackIcon Kind="Information" Width="16" Height="16" Margin="4 0 0 0" />
+                                        </InlineUIContainer>
+                                    </TextBlock>
+                                    <ComboBox Width="160"
+                                              SelectedItem="{Binding FL.PlayerConfig.Subtitles.ChickenRiceConfig.Task}">
+                                        <sys:String>translate</sys:String>
+                                        <sys:String>transcribe</sys:String>
+                                    </ComboBox>
+                                </StackPanel>
+
+                                <DockPanel Margin="0 6">
+                                    <TextBlock Width="200" Text="Extra Arguments" />
+                                    <TextBox Text="{Binding FL.PlayerConfig.Subtitles.ChickenRiceConfig.ExtraArguments}"
+                                             HorizontalContentAlignment="Left" />
+                                </DockPanel>
+
+                                <DockPanel Margin="0 6">
+                                    <TextBlock Width="200" Text="Timeout (minutes)" />
+                                    <TextBox Text="{Binding FL.PlayerConfig.Subtitles.ChickenRiceConfig.TimeoutMinutes}"
+                                             HorizontalContentAlignment="Left" />
+                                </DockPanel>
+
+                                <StackPanel Orientation="Horizontal" Margin="0 6">
+                                    <TextBlock Width="200">
+                                        Progressive Subtitles
+                                        <InlineUIContainer BaselineAlignment="Center" Cursor="Help">
+                                            <ToolTipService.ToolTip>
+                                                <TextBlock Text="Show already generated subtitles as soon as playback starts. Remaining subtitles keep being generated in the background and are released in sync with the playback position. Turn off to wait for the whole file (legacy behaviour)." TextWrapping="Wrap" MaxWidth="400" />
+                                            </ToolTipService.ToolTip>
+                                            <materialDesign:PackIcon Kind="Information" Width="16" Height="16" Margin="4 0 0 0" />
+                                        </InlineUIContainer>
+                                    </TextBlock>
+                                    <ToggleButton IsChecked="{Binding FL.PlayerConfig.Subtitles.ChickenRiceConfig.ProgressiveEnabled}" />
+                                </StackPanel>
+
+                                <DockPanel Margin="0 6">
+                                    <TextBlock Width="200" Text="Progress Lead (sec)" />
+                                    <TextBox Text="{Binding FL.PlayerConfig.Subtitles.ChickenRiceConfig.ProgressiveLeadSeconds}"
+                                             HorizontalContentAlignment="Left" />
+                                </DockPanel>
+
+                                <StackPanel Orientation="Horizontal" Margin="0 10 0 0">
+                                    <Button Content="Check Engine"
+                                            Margin="0 0 10 0"
+                                            HorizontalAlignment="Left"
+                                            Command="{Binding CmdCheckChickenRice}" />
+                                    <Button Content="Open Engine Folder"
+                                            Margin="0 0 10 0"
+                                            HorizontalAlignment="Left"
+                                            Command="{Binding CmdOpenChickenRiceFolder}" />
+                                    <Button Content="Copy Debug Command"
+                                            HorizontalAlignment="Left"
+                                            Command="{Binding CmdCopyChickenRiceCommand}" />
+                                </StackPanel>
+
+                                <TextBlock Margin="0 8 0 0"
+                                           TextWrapping="Wrap"
+                                           Text="{Binding ChickenRiceStatus}" />
                             </StackPanel>
                         </GroupBox>
                     </StackPanel>

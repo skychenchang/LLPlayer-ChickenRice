@@ -6,12 +6,14 @@
              xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
              xmlns:local="clr-namespace:LLPlayer.Controls"
              xmlns:resources="clr-namespace:LLPlayer.Resources"
+             xmlns:services="clr-namespace:LLPlayer.Services"
              mc:Ignorable="d"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              d:DataContext="{d:DesignInstance local:FlyleafBar}"
              d:Foreground="White"
              d:Background="Black"
-             d:DesignHeight="450" d:DesignWidth="800">
+             d:DesignHeight="450" d:DesignWidth="800"
+             services:MenuLocalizer.AutoLocalize="True">
 
     <UserControl.Resources>
         <ResourceDictionary>

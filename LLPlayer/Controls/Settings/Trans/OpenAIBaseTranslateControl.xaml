@@ -6,10 +6,12 @@
              xmlns:local="clr-namespace:LLPlayer.Controls.Settings.TransControl"
              xmlns:helpers="clr-namespace:LLPlayer.Extensions"
              xmlns:services="clr-namespace:FlyleafLib.MediaPlayer.Translation.Services;assembly=FlyleafLib"
+             xmlns:llpServices="clr-namespace:LLPlayer.Services"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              d:DataContext="{d:DesignInstance services:OpenAIBaseTranslateSettings}"
              mc:Ignorable="d"
-             d:DesignHeight="450" d:DesignWidth="800">
+             d:DesignHeight="450" d:DesignWidth="800"
+             llpServices:MenuLocalizer.AutoLocalize="True">
     <StackPanel>
         <StackPanel Orientation="Horizontal" Margin="0 0 0 8">
             <TextBlock
