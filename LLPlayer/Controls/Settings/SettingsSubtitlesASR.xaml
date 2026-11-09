@@ -97,6 +97,44 @@
                                 <TextBlock Grid.Column="1" FontSize="14" Margin="5 0 0 0" FontWeight="Medium" VerticalAlignment="Center" Text="Download Engine" />
                             </Grid>
                         </Button>
+
+                        <!-- ChickenRice: same look/state as the faster-whisper button above,
+                             but opens the upstream releases page for manual download. -->
+                        <Button
+                            Margin="10 0 0 0"
+                            Command="{Binding CmdDownloadChickenRice}">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource MaterialDesignRaisedSecondaryButton}">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding FL.PlayerConfig.Subtitles.ASREngine}" Value="ChickenRice">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <materialDesign:PackIcon Grid.Column="0" Width="18" Height="18" VerticalAlignment="Center" Background="#01000000">
+                                    <materialDesign:PackIcon.Style>
+                                        <Style TargetType="materialDesign:PackIcon">
+                                            <Setter Property="Kind" Value="Cancel" />
+                                            <Setter Property="ToolTip" Value="Not Downloaded" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding FL.PlayerConfig.Subtitles.ASREngine, Converter={StaticResource ASREngineDownloadedConv}}" Value="True">
+                                                    <Setter Property="Kind" Value="CheckBold" />
+                                                    <Setter Property="ToolTip" Value="Downloaded" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </materialDesign:PackIcon.Style>
+                                </materialDesign:PackIcon>
+                                <TextBlock Grid.Column="1" FontSize="14" Margin="5 0 0 0" FontWeight="Medium" VerticalAlignment="Center" Text="Download Engine" />
+                            </Grid>
+                        </Button>
                     </StackPanel>
 
                     <StackPanel Orientation="Horizontal">

@@ -304,8 +304,15 @@ public class SubtitlesASR
                             buffer.Pump,
                             finalSubs =>
                             {
-                                buffer.Clear();
-                                ReplaceSubs(finalSubs);
+                                // ReplaceSubs returns early when cancelled or when
+                                // the engine produced no SRT. Only clear the
+                                // preview in the case where it is really replaced,
+                                // otherwise the already shown subtitles vanish.
+                                if (!token.IsCancellationRequested && finalSubs.Count > 0)
+                                {
+                                    buffer.Clear();
+                                    ReplaceSubs(finalSubs);
+                                }
                             });
                     }
                     else

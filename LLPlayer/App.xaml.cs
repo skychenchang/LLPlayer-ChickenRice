@@ -90,11 +90,28 @@ public partial class App : PrismApplication
 
         if (!e.Handled)
         {
+            // Mark as handled BEFORE any UI work: if the error dialog itself
+            // fails (e.g. out of memory), a second exception must not escape
+            // the dispatcher handler and kill the process silently.
+            e.Handled = true;
             Log.Error($"Unknown error occurred in App: {e.Exception}");
             Logger.ForceFlush();
 
-            ErrorDialogHelper.ShowUnknownErrorPopup($"Unhandled Exception: {e.Exception.Message}", "Global", e.Exception);
-            e.Handled = true;
+            try
+            {
+                ErrorDialogHelper.ShowUnknownErrorPopup($"Unhandled Exception: {e.Exception.Message}", "Global", e.Exception);
+            }
+            catch (Exception popupEx)
+            {
+                try
+                {
+                    File.WriteAllText(App.CrashLogPath, $"Error dialog failed: {popupEx}\n\n{e.Exception}");
+                }
+                catch
+                {
+                    // ignored
+                }
+            }
         }
     }
 
@@ -135,15 +152,18 @@ public partial class App : PrismApplication
         string exeLocation = Process.GetCurrentProcess().MainModule!.FileName;
         FileVersionInfo fvi = FileVersionInfo.GetVersionInfo(exeLocation);
 
-        Guards.ThrowIfNull(fvi.ProductVersion);
+        // Release builds carry "0.3.5+<SourceRevisionId>". Local/dev builds may
+        // omit the suffix; keep the app usable instead of throwing at startup.
+        string productVersion = fvi.ProductVersion ?? string.Empty;
+        int plus = productVersion.IndexOf('+');
 
-        var version = fvi.ProductVersion.Split("+");
-        if (version.Length != 2)
-        {
-            throw new InvalidOperationException($"ProductVersion is invalid: {fvi.ProductVersion}");
-        }
+        string version = plus >= 0 ? productVersion[..plus] : productVersion;
+        string commitHash = plus >= 0 ? productVersion[(plus + 1)..] : string.Empty;
 
-        return (version[0], version[1]);
+        if (version.Length == 0)
+            version = "0.0.0";
+
+        return (version, commitHash);
     }
     #endregion
 }

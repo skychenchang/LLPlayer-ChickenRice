@@ -15,6 +15,9 @@ public partial class SettingsAbout : UserControl
         InitializeComponent();
 
         DataContext = ((App)Application.Current).Container.Resolve<SettingsAboutVM>();
+
+        // A pending network request must not call back into an unloaded view.
+        Unloaded += (_, _) => ((SettingsAboutVM)DataContext).CancelPendingCheck();
     }
 }
 
@@ -109,13 +112,116 @@ public class SettingsAboutVM : Bindable
             },
         ];
 
+        CmdCheckUpdate!.PropertyChanged += (_, args) =>
+        {
+            if (args.PropertyName == nameof(CmdCheckUpdate.IsExecuting))
+                OnPropertyChanged(nameof(CanCheckUpdate));
+        };
+
         MenuStrings.LanguageChanged += () =>
         {
             foreach (LibraryInfo library in Libraries)
                 library.RaiseLocalizedDescription();
+
+            // Bound text is not rewritten by AutoLocalize; recompute it here.
+            ApplyResult();
         };
     }
     public ObservableCollection<LibraryInfo> Libraries { get; }
+
+    #region Software update
+
+    private UpdateCheckResult? _lastResult;
+    private CancellationTokenSource? _checkCts;
+
+    public string UpdateStatusText { get; private set => Set(ref field, value); } = "";
+    public string VersionSummaryText { get; private set => Set(ref field, value); } = "";
+    public bool HasUpdate { get; private set => Set(ref field, value); }
+
+    public bool CanCheckUpdate => !CmdCheckUpdate.IsExecuting;
+
+    public AsyncDelegateCommand CmdCheckUpdate => field ??= new AsyncDelegateCommand(async () =>
+    {
+        _checkCts?.Cancel();
+        _checkCts = new CancellationTokenSource();
+        CancellationToken token = _checkCts.Token;
+
+        HasUpdate = false;
+        VersionSummaryText = "";
+        UpdateStatusText = MenuStrings.Translate("Checking for updates...");
+
+        try
+        {
+            _lastResult = await UpdateChecker.CheckAsync(token);
+        }
+        catch (OperationCanceledException)
+        {
+            UpdateStatusText = MenuStrings.Translate("Update check canceled.");
+            return;
+        }
+        finally
+        {
+            _checkCts?.Dispose();
+            _checkCts = null;
+        }
+
+        ApplyResult();
+    }).ObservesCanExecute(() => CanCheckUpdate);
+
+    public DelegateCommand CmdOpenReleases => field ??= new(() =>
+    {
+        string url = _lastResult?.ReleaseUrl ?? UpdateUrls.ReleasesPage;
+        try
+        {
+            HyperlinkHelper.OpenUrlInBrowser(url);
+        }
+        catch (Exception)
+        {
+            UpdateStatusText = MenuStrings.Translate("Cannot open the download page.");
+        }
+    });
+
+    public void CancelPendingCheck() => _checkCts?.Cancel();
+
+    private void ApplyResult()
+    {
+        if (_lastResult is null)
+            return;
+
+        UpdateCheckResult result = _lastResult;
+        HasUpdate = result.Kind == UpdateCheckKind.UpdateAvailable;
+        string current = App.Version;
+
+        switch (result.Kind)
+        {
+            case UpdateCheckKind.UpdateAvailable:
+                VersionSummaryText = MenuStrings.Format(
+                    "Current version: {0} | Latest version: {1}", current,
+                    result.LatestVersion ?? result.RawTag ?? "-");
+                UpdateStatusText = MenuStrings.Translate(
+                    "A new version is available. Open the download page to get it.");
+                break;
+
+            case UpdateCheckKind.UpToDate:
+                VersionSummaryText = MenuStrings.Format(
+                    "Current version: {0} | Latest version: {1}", current,
+                    result.LatestVersion ?? result.RawTag ?? "-");
+                UpdateStatusText = MenuStrings.Translate("You are already on the latest version.");
+                break;
+
+            case UpdateCheckKind.NoPublishedRelease:
+                VersionSummaryText = MenuStrings.Format("Current version: {0}", current);
+                UpdateStatusText = MenuStrings.Translate("No published release is available yet.");
+                break;
+
+            default: // Failed
+                VersionSummaryText = MenuStrings.Format("Current version: {0}", current);
+                UpdateStatusText = MenuStrings.Translate(
+                    "Update check failed. Please check your network or try again later.");
+                break;
+        }
+    }
+    #endregion
 
     public DelegateCommand CmdCopyVersion => field ??= new(() =>
     {

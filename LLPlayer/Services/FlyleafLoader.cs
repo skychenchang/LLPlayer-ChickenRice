@@ -27,7 +27,7 @@ public static class FlyleafLoader
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Cannot load EngineConfig from {Path.GetFileName(App.EngineConfigPath)}, Please review the settings or delete the config file. Error details are recorded in {Path.GetFileName(App.CrashLogPath)}.");
+                MessageBox.Show(MenuStrings.ConfigLoadError(Path.GetFileName(App.EngineConfigPath), ex.Message));
                 try
                 {
                     File.WriteAllText(App.CrashLogPath, "EngineConfig Loading Error: " + ex);
@@ -38,6 +38,7 @@ public static class FlyleafLoader
                 }
 
                 Application.Current.Shutdown();
+                return;
             }
         }
 
@@ -66,7 +67,7 @@ public static class FlyleafLoader
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Cannot load PlayerConfig from {Path.GetFileName(App.PlayerConfigPath)}, Please review the settings or delete the config file. Error details are recorded in {Path.GetFileName(App.CrashLogPath)}.");
+                MessageBox.Show(MenuStrings.ConfigLoadError(Path.GetFileName(App.PlayerConfigPath), ex.Message));
                 try
                 {
                     File.WriteAllText(App.CrashLogPath, "PlayerConfig Loading Error: " + ex);

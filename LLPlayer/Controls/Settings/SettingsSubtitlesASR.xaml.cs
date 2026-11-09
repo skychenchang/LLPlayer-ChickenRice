@@ -234,6 +234,25 @@ public class SettingsSubtitlesASRVM : Bindable
         FL.PlayerConfig.Subtitles.ASREngine = prev;
     });
 
+    private const string ChickenRiceReleasesUrl =
+        "https://github.com/TransWithAI/Faster-Whisper-TransWithAI-ChickenRice/releases";
+
+    /// <summary>
+    /// ChickenRice is distributed by its upstream project, so the button opens
+    /// the releases page instead of the faster-whisper downloader dialog.
+    /// </summary>
+    public DelegateCommand CmdDownloadChickenRice => field ??= new(() =>
+    {
+        try
+        {
+            HyperlinkHelper.OpenUrlInBrowser(ChickenRiceReleasesUrl);
+        }
+        catch (Exception ex)
+        {
+            ChickenRiceStatus = $"Cannot open the release page: {ex.Message}";
+        }
+    });
+
     public DelegateCommand CmdOpenModelFolder => field ??= new(() =>
     {
         if (!Directory.Exists(WhisperConfig.ModelsDirectory))
@@ -333,6 +352,14 @@ public class ASREngineDownloadedConverter : IValueConverter
             if (engine == SubASREngineType.FasterWhisper)
             {
                 if (File.Exists(FasterWhisperConfig.DefaultEnginePath))
+                {
+                    return true;
+                }
+            }
+            else if (engine == SubASREngineType.ChickenRice)
+            {
+                // ChickenRiceConfig.DefaultEnginePath -> Whisper\ChickenRice\infer.exe
+                if (File.Exists(ChickenRiceConfig.DefaultEnginePath))
                 {
                     return true;
                 }

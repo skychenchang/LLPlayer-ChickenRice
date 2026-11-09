@@ -1,7 +1,7 @@
 [README.md](https://github.com/user-attachments/files/34482765/README.md)
 <p align="center"><img height="96" src="./LLPlayer.png"></p>
 
-<h1 align="center">LLPlayer-ChickenRice</h1>
+<h1 align="center">LLPlayer-ChickenRice 0.3.5</h1>
 
 <h3 align="center">边播放边翻译的播放器 · 日语视频一键出中文字幕</h3>
 
@@ -37,6 +37,7 @@
   - [5.7 注意事项](#57-注意事项)
   - [5.8 故障排查](#58-故障排查)
 - [六、其他常用功能](#六其他常用功能)
+  - [检查更新（0.3.5 新增）](#检查更新035-新增)
 - [七、界面语言](#七界面语言)
 - [八、从源码构建](#八从源码构建)
 - [九、目录结构](#九目录结构)
@@ -67,6 +68,7 @@
 | 功能 | 说明 |
 |---|---|
 | **ChickenRice 日译中** | 整文件离线处理，日语语音直接输出简体中文字幕；播放启动即可看到已生成字幕，其余随播放进度出现（[详见第五章](#五chickenrice-日语音频转简体中文字幕重点)） |
+| **检查更新（0.3.5 新增）** | `Ctrl+,` → 关于 → `检查更新`，显示当前版本与线上最新正式发布版本，四种结果可区分（[详见第六章](#检查更新035-新增)） |
 | 实时语音识别 | `whisper.cpp` / `faster-whisper` 两套引擎，按音频块流式出字幕，支持直播与在线视频 |
 | 字幕翻译 | Google / DeepL / OpenAI / Claude / Ollama / LM Studio 等多种翻译后端，可把任意语言字幕译为中文 |
 | 双字幕对照 | 主字幕 + 副字幕同时显示，可一份原文一份译文，可设置分隔线与位置 |
@@ -170,7 +172,9 @@
 
 **第 1 步：下载 ChickenRice 引擎（翻译版）**
 
-到 [TransWithAI Release 页](https://github.com/TransWithAI/Faster-Whisper-TransWithAI-ChickenRice/releases) 下载与你的显卡匹配的 **`-translate` 翻译版**（文件名通常含 `translate`）：
+到 [TransWithAI Release 页](https://github.com/TransWithAI/Faster-Whisper-TransWithAI-ChickenRice/releases) 下载与你的显卡匹配的 **`-translate` 翻译版**（文件名通常含 `translate`）。
+
+> 也可以在播放器里直接打开该页面：`Ctrl+,` → 字幕 → 语音识别 → 选中 `ChickenRice (JA > ZH, whole file)` 后，引擎选择框右侧会出现与 `faster-whisper` 同款的 **`下载引擎`** 按钮，点击即跳转；按钮图标按 `Whisper\ChickenRice\infer.exe` 是否存在显示「已下载 / 未下载」。
 
 - RTX 50 系 → CUDA 12.8 版
 - 其他 NVIDIA 显卡 → 对应 CUDA 版本
@@ -299,6 +303,23 @@ Whisper\ChickenRice\models\
 | 字幕导出 / 下载 | 右键 → `字幕` → `字幕导出` / `字幕下载` |
 | 快捷键一览 | 右键 → `快捷键说明` |
 | 显示调试信息（帧率、丢帧等） | 右键 → `显示调试信息` |
+| 检查软件更新 | `Ctrl+,` → 关于 → `检查更新` |
+
+### 检查更新（0.3.5 新增）
+
+入口在 `Ctrl+,` → **关于**，与版本号显示在同一区域。当前版本与「关于」页共用 `App.Version`（0.3.5），依据
+`https://api.github.com/repos/skychenchang/LLPlayer-ChickenRice/releases/latest` 列出的**最新正式发布版本**比较，
+结果直接显示在关于页，四种状态清晰可区分：
+
+| 状态 | 页面显示 |
+|---|---|
+| 发现新版本 | `当前版本：0.3.5 \| 最新版本：x.y.z` + `发现新版本，可打开下载页获取。`，并出现 **`打开下载页`** 按钮 |
+| 无更新 | `当前版本：… \| 最新版本：…` + `当前已是最新版本。` |
+| 暂无已发布版本 | `当前版本：…` + `暂无已发布版本。` |
+| 检查失败 | `当前版本：…` + `检查更新失败，请检查网络后重试。` |
+
+`打开下载页` 始终指向 `https://github.com/skychenchang/LLPlayer-ChickenRice/releases`。请求异步执行、12 秒超时、
+带 `User-Agent`，检查期间按钮禁用，关闭页面自动取消；不影响播放状态与配置。
 
 ---
 
@@ -327,8 +348,8 @@ dotnet publish LLPlayer/LLPlayer.csproj -c Release -o ./publish \
 cp -r FFmpeg ./publish/FFmpeg
 ```
 
-> **为什么必须带 `-p:SourceRevisionId=...`**：程序启动时会读取 `ProductVersion` 并要求形如 `0.3.0+<hash>`。官方 CI 会注入 git hash，本地不带该参数会得到 `0.3.0`，**一旦存在配置文件就会启动失败**。
-> 参数值可任意（如 `local-build`），只是显示在「关于」页。
+> **建议带 `-p:SourceRevisionId=...`**：程序启动时从 `ProductVersion` 读取版本，发布版形如 `0.3.5+chickenrice-integration`。
+> 本地不带该参数仍可启动（0.3.5 已加入容错），只是「关于」页的提交哈希为空。参数值可任意（如 `local-build`）。
 
 运行测试：
 

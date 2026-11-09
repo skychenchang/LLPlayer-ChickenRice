@@ -20,6 +20,15 @@ public class MainWindowVM : Bindable
     {
         FL = fl;
         Log = new LogHandler("[App] [MainWindowVM  ] ");
+
+        // Changing the ASR engine must cancel a task started by the previous
+        // engine, otherwise its process, spinner and subtitles linger behind.
+        // Kept on the LLPlayer side so FlyleafLib's Config stays UI-agnostic.
+        FL.PlayerConfig.Subtitles.PropertyChanged += (_, args) =>
+        {
+            if (args.PropertyName == nameof(FL.PlayerConfig.Subtitles.ASREngine))
+                FL.Player.SubtitlesASR.TryCancel(false);
+        };
     }
 
     public string Title { get; set => Set(ref field, value); } = App.Name;

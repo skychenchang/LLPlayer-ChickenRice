@@ -727,6 +727,19 @@ public class Subtitle : NotifyPropertyChanged
 
                     var ex = t.Exception.Flatten().InnerException;
 
+                    // Cancelling ASR (user action or engine switch) is expected:
+                    // do not raise an "unknown error" dialog with an alert sound.
+                    if (ex is OperationCanceledException)
+                        return;
+
+                    // A timeout is an actionable, known failure: keep the readable
+                    // engine message but avoid the stack-trace/unknown-error UI.
+                    if (ex is TimeoutException)
+                    {
+                        _player.RaiseKnownErrorOccurred($"Cannot execute ASR: {ex.Message}", KnownErrorType.ASR);
+                        return;
+                    }
+
                     _player.RaiseUnknownErrorOccurred($"Cannot execute ASR: {ex?.Message}", UnknownErrorType.ASR, t.Exception);
                 }
             }, TaskContinuationOptions.OnlyOnFaulted);

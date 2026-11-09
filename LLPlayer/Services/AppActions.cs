@@ -424,7 +424,7 @@ public class AppActions
             }
 
             _config.PropertyChanged -= ConfigOnPropertyChanged;
-            _player.Config.Subtitles.WhisperCppConfig.PropertyChanged += ConfigOnPropertyChanged;
+            _player.Config.Subtitles.WhisperCppConfig.PropertyChanged -= ConfigOnPropertyChanged;
 
             if (result.Result == ButtonResult.OK)
             {
